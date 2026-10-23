@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Unified Education Interface</title>
+<style>
+:root{--bg:#f6f7fb;--card:#fff;--tx:#1d2433;--mu:#667085;--ac:#3b5bdb;--ac2:#e7ecff;--bd:#e3e6ee;--ok:#2b8a3e;--wa:#e8590c;--er:#c92a2a;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12151c;--card:#1b2030;--tx:#e8ebf3;--mu:#98a2b3;--ac:#7c93ff;--ac2:#252c4a;--bd:#2c3347;--ok:#69db7c;--wa:#ffa94d;--er:#ff8787;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#12151c;--card:#1b2030;--tx:#e8ebf3;--mu:#98a2b3;--ac:#7c93ff;--ac2:#252c4a;--bd:#2c3347;--ok:#69db7c;--wa:#ffa94d;--er:#ff8787;color-scheme:dark}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+.app{display:flex;min-height:100vh}
+nav{width:210px;background:var(--card);border-right:1px solid var(--bd);padding:14px 10px;flex-shrink:0}
+nav h2{font-size:15px;margin:0 8px 12px;color:var(--ac)}
+nav button{display:block;width:100%;text-align:left;background:none;border:0;padding:8px 10px;border-radius:8px;cursor:pointer;color:var(--mu)}
+nav button.on,nav button:hover{background:var(--ac2);color:var(--ac)}
+nav .new::after{content:"NEW";font-size:9px;margin-left:6px;background:var(--ac);color:var(--bg);padding:1px 5px;border-radius:8px}
+main{flex:1;padding:20px;min-width:0;max-width:1000px}
+h1{font-size:21px;margin:0 0 4px}.sub{color:var(--mu);margin:0 0 16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:12px}
+.card h3{margin:0 0 8px;font-size:15px}
+.big{font-size:26px;font-weight:700;color:var(--ac)}
+.btn{background:var(--ac);color:var(--bg);border:0;border-radius:8px;padding:7px 13px;cursor:pointer}
+.btn.s{background:var(--ac2);color:var(--ac)}
+input,select,textarea{background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:7px 9px;max-width:100%}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0}
+.tag{display:inline-block;font-size:12px;padding:1px 8px;border-radius:10px;background:var(--ac2);color:var(--ac);margin-right:4px}
+.tag.w{color:var(--wa)}.tag.e{color:var(--er)}.tag.o{color:var(--ok)}
+.bar{height:8px;background:var(--ac2);border-radius:5px;overflow:hidden}.bar i{display:block;height:100%;background:var(--ac)}
+.li{padding:8px 0;border-bottom:1px solid var(--bd)}.li:last-child{border:0}
+.mu{color:var(--mu);font-size:13px}.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%}td,th{padding:7px 8px;border-bottom:1px solid var(--bd);text-align:left;white-space:nowrap}
+.login{max-width:380px;margin:12vh auto;padding:0 16px}
+.slot{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--bd)}.slot b{min-width:105px;color:var(--ac)}
+@media(max-width:700px){.app{flex-direction:column}nav{width:100%;display:flex;overflow-x:auto;gap:4px;border-right:0;border-bottom:1px solid var(--bd)}nav h2{display:none}nav button{white-space:nowrap;width:auto}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s);
+const iso=n=>{const x=new Date();x.setDate(x.getDate()+n);return x.toISOString().slice(0,10)};
+const left=d=>Math.round((new Date(d)-new Date(iso(0)))/864e5);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const SUBJ=["Data Structures","DBMS","Operating Systems","Web Development","Machine Learning"];
+
+/* ---------- state from server ---------- */
+let S=null;
+const CAREER={
+ "Data Structures":{role:"Software Engineer",skills:["Arrays, trees, graphs","Time complexity","Competitive coding"],proj:["Pathfinding visualizer","Autocomplete with a Trie"],cert:["NPTEL DSA","HackerRank Problem Solving"],intern:["Solve 150 interview problems","Mock interviews","Resume with 2 projects"]},
+ "DBMS":{role:"Data / Backend Engineer",skills:["SQL and joins","Indexing","PostgreSQL or MySQL"],proj:["Library management database","Sales analytics dashboard"],cert:["Oracle SQL Associate","Google Data Analytics"],intern:["Practice 100 SQL queries","Design 3 schemas","Learn an ORM"]},
+ "Operating Systems":{role:"Systems / DevOps Engineer",skills:["Linux shell","Processes and threads","Docker basics"],proj:["Mini shell in C","CPU scheduler simulator"],cert:["Linux Foundation LFCA","AWS Cloud Practitioner"],intern:["Contribute to an open-source repo","Set up a CI pipeline"]},
+ "Web Development":{role:"Full-Stack Developer",skills:["HTML, CSS, JavaScript","React","REST APIs with Flask or Node"],proj:["Portfolio site","Unified Education Interface prototype"],cert:["Meta Front-End Developer","freeCodeCamp Responsive Design"],intern:["Deploy 2 live projects","Polish GitHub profile","Practise system design basics"]},
+ "Machine Learning":{role:"ML Engineer",skills:["Python, NumPy, pandas","Model evaluation","scikit-learn"],proj:["Student performance predictor","Course recommender"],cert:["Coursera ML Specialization","TensorFlow Developer"],intern:["Publish a Kaggle notebook","Read 3 papers","Build one end-to-end ML app"]}
+};
+
+/* ---------- api + auth ---------- */
+async function api(m,p,b){const r=await fetch(p,{method:m,credentials:"same-origin",headers:{"Content-Type":"application/json","X-Requested-With":"uei"},body:b?JSON.stringify(b):undefined});let d={};try{d=await r.json()}catch(e){}if(!r.ok){const x=new Error(d.error||"Request failed");x.status=r.status;throw x}return d}
+async function load(){const v=(S&&S.view)||"dash";S=await api("GET","/api/state");S.view=v}
+async function act(m,p,b){try{await api(m,p,b);await load();render()}catch(e){if(e.status===401){S=null;render()}else alert(e.message)}}
+let REG=false;
+function authHTML(){return `<div class="login card"><h1>Unified Education Interface</h1><p class="sub">${REG?"Create your account":"Sign in to continue"}</p>
+ ${REG?'<div class="row"><input id="nm" placeholder="Full name" style="flex:1" autocomplete="name"></div>':""}
+ <div class="row"><input id="em" type="email" placeholder="Email" style="flex:1" autocomplete="email"></div>
+ <div class="row"><input id="pw" type="password" placeholder="Password${REG?" (min 8 characters)":""}" style="flex:1" autocomplete="${REG?"new-password":"current-password"}" onkeydown="if(event.key==='Enter')doAuth()"></div>
+ ${REG?'<div class="row"><select id="rl" style="flex:1" onchange="$(\'#cdr\').style.display=this.value===\'student\'?\'none\':\'flex\'"><option value="student">Student</option><option value="faculty">Faculty</option><option value="admin">Administrator</option></select></div><div class="row" id="cdr" style="display:none"><input id="cd" placeholder="Invite code" style="flex:1"></div>':""}
+ <div class="row"><button class="btn" onclick="doAuth()">${REG?"Register":"Sign in"}</button><button class="btn s" onclick="REG=!REG;render()">${REG?"I have an account":"Create account"}</button></div>
+ <p id="err" class="tag e" style="display:none"></p></div>`}
+async function doAuth(){const b={email:$("#em").value,password:$("#pw").value};if(REG){b.name=$("#nm").value;b.role=$("#rl").value;b.code=$("#cd")?$("#cd").value:""}
+ try{await api("POST",REG?"/api/register":"/api/login",b);S={view:"dash"};await load();render()}catch(e){const x=$("#err");x.textContent=e.message;x.style.display="inline-block"}}
+async function logout(){try{await api("POST","/api/logout")}catch(e){}S=null;render()}
+const go=v=>{S.view=v;render()};
+
+/* ---------- navigation by role ---------- */
+const NAV={
+ student:[["dash","Dashboard"],["plan","Smart Planner",1],["mat","Study Materials"],["asg","Assignments"],["att","Attendance"],["gr","Exams & Grades"],["msg","Communication"],["peer","Peer Learning",1],["car","Career Roadmap",1],["not","Notifications"]],
+ faculty:[["dash","Dashboard"],["asg","Assignments"],["att","Attendance"],["gr","Grades"],["mat","Study Materials"],["msg","Communication"]],
+ admin:[["dash","Dashboard"],["msg","Communication"]]
+};
+
+/* ---------- views ---------- */
+const V={};
+const pct=(a,b)=>b?Math.round(a/b*100):0;
+const bar=p=>`<div class="bar"><i style="width:${p}%"></i></div>`;
+
+V.dash=()=>{
+ const u=S.user;
+ if(u.role==="admin")return `<h1>Admin Dashboard</h1><p class="sub">Role-based access overview</p>
+  <div class="grid"><div class="card"><div class="big">${S.stats.student}</div>Students</div><div class="card"><div class="big">${S.stats.faculty}</div>Faculty</div><div class="card"><div class="big">${S.assignments.length}</div>Assignments</div><div class="card"><div class="big">${S.messages.length}</div>Announcements</div></div>
+  <div class="card"><h3>Modules</h3>User Management · Study Materials · Assignments · Attendance · Exams & Grades · Communication · Notifications · Progress Tracking</div>`;
+ if(u.role==="faculty")return `<h1>Faculty Dashboard</h1><p class="sub">Welcome, ${esc(u.name)}</p>
+  <div class="grid"><div class="card"><div class="big">${S.assignments.filter(a=>!a.done).length}</div>Open assignments</div><div class="card"><div class="big">${S.materials.length}</div>Materials shared</div><div class="card"><div class="big">${S.doubts.length}</div>Student doubts</div></div>
+  <div class="card"><h3>Student doubts</h3>${S.doubts.map(d=>`<div class="li"><span class="tag">${d.subj}</span>${esc(d.q)}</div>`).join("")}</div>`;
+ const at=Object.values(S.attendance),ap=pct(at.reduce((a,b)=>a+b[0],0),at.reduce((a,b)=>a+b[1],0));
+ const gs=Object.entries(S.grades),avg=gs.length?Math.round(gs.reduce((a,b)=>a+b[1],0)/gs.length):0,weak=gs.sort((a,b)=>a[1]-b[1])[0]||["",0];
+ const sub=pct(S.assignments.filter(a=>a.done).length,S.assignments.length);
+ return `<h1>Hello, ${esc(u.name)}</h1><p class="sub">Everything academic, in one place.</p>
+  <div class="grid"><div class="card"><div class="big">${ap}%</div>Attendance${bar(ap)}</div><div class="card"><div class="big">${avg}%</div>Average grade${bar(avg)}</div><div class="card"><div class="big">${sub}%</div>Assignments submitted${bar(sub)}</div></div>
+  <div class="card"><h3>Personalized recommendation</h3>${gs.length?`Your weakest subject is <b>${weak[0]}</b> (${weak[1]}%). Start with: ${S.materials.filter(m=>m.s===weak[0]).map(m=>esc(m.t)).join(", ")||"ask your faculty for resources"}.`:"No grades recorded yet. Recommendations appear once your faculty adds marks."}</div>
+  <div class="card"><h3>Today’s focus</h3>${planFor(4).slice(0,3).map(p=>`<div class="li">${p.label}</div>`).join("")||"Nothing pending."}<div class="row"><button class="btn s" onclick="go('plan')">Open full plan</button></div></div>`;
+};
+
+/* --- Feature 1: Smart Academic Planner --- */
+let HOURS=4;
+function planFor(hours){
+ const items=[];
+ S.assignments.filter(a=>!a.done).forEach(a=>{const d=Math.max(left(a.due),0);items.push({score:12/(d+1),h:Math.min(a.est,1.5),label:`Work on “${esc(a.title)}” (${a.subj}) — due in ${d} day${d===1?"":"s"}`,tag:d<=1?"e":"w"})});
+ S.exams.filter(e=>left(e.date)>=0&&left(e.date)<=14).forEach(e=>{const d=left(e.date);items.push({score:10/(d+1),h:1.5,label:`Revise ${e.subj} for exam in ${d} day${d===1?"":"s"}`,tag:d<=3?"e":"w"})});
+ S.goals.forEach(g=>items.push({score:1.5,h:.5,label:`Goal: ${esc(g.text)}`,tag:"o"}));
+ items.sort((a,b)=>b.score-a.score);
+ let t=17*60,rem=hours,out=[];
+ for(const it of items){if(rem<=0)break;const h=Math.min(it.h,rem);out.push({...it,time:fmt(t)+" – "+fmt(t+h*60)});t+=h*60+10;rem-=h}
+ return out;
+}
+const fmt=m=>{m=Math.round(m);return String(Math.floor(m/60)%24).padStart(2,"0")+":"+String(m%60).padStart(2,"0")};
+V.plan=()=>{
+ const dow=new Date().getDay(),cls=S.timetable[dow]||[];
+ const plan=planFor(HOURS);
+ const events=[...S.assignments.filter(a=>!a.done).map(a=>({d:a.due,t:"Deadline",x:a.title})),...S.exams.map(e=>({d:e.date,t:"Exam",x:e.subj}))].sort((a,b)=>a.d.localeCompare(b.d));
+ return `<h1>Smart Academic Planner</h1><p class="sub">Classes, deadlines, exams and goals combined into a realistic plan for today.</p>
+ <div class="card"><h3>Today’s classes</h3>${cls.map(c=>`<div class="slot"><b>${c[0]}</b>${c[1]}</div>`).join("")||'<span class="mu">No classes today.</span>'}</div>
+ <div class="card"><h3>Today’s study plan</h3><div class="row">Study hours available: <input type="number" min="1" max="10" step="0.5" value="${HOURS}" style="width:70px" onchange="HOURS=+this.value||4;render()"></div>
+ ${plan.map(p=>`<div class="slot"><b>${p.time}</b><span><span class="tag ${p.tag}">${p.tag==="e"?"Urgent":p.tag==="w"?"Soon":"Goal"}</span>${p.label}</span></div>`).join("")||'<span class="mu">You are all caught up.</span>'}
+ <p class="mu">Priority is based on how close each deadline is, so urgent work is scheduled first.</p></div>
+ <div class="grid"><div class="card"><h3>Upcoming calendar</h3>${events.map(e=>`<div class="li"><span class="tag ${e.t==="Exam"?"e":"w"}">${e.t}</span>${esc(e.x)}<div class="mu">${e.d}</div></div>`).join("")}</div>
+ <div class="card"><h3>Personal study goals</h3>${S.goals.map(g=>`<div class="li">${esc(g.text)} <button class="btn s" onclick="delGoal(${g.id})">×</button></div>`).join("")}
+ <div class="row"><input id="gt" placeholder="New daily goal"><button class="btn" onclick="addGoal()">Add</button></div></div>
+ <div class="card"><h3>Add an exam date</h3><div class="row"><select id="es">${SUBJ.map(s=>`<option>${s}</option>`).join("")}</select><input id="ed" type="date"><button class="btn" onclick="addExam()">Add</button></div></div></div>`;
+};
+
+V.mat=()=>`<h1>Study Materials</h1><p class="sub">Notes, e-books and videos</p>
+ <div class="card">${S.materials.map(m=>`<div class="li"><span class="tag">${m.k}</span><b>${esc(m.t)}</b> <span class="mu">${m.s}</span></div>`).join("")}</div>
+ ${S.user.role==="faculty"?`<div class="card"><h3>Upload material</h3><div class="row"><input id="mt" placeholder="Title"><select id="ms">${SUBJ.map(s=>`<option>${s}</option>`).join("")}</select><select id="mk"><option>PDF</option><option>Video</option><option>E-book</option></select><button class="btn" onclick="addMat()">Add</button></div></div>`:""}`;
+
+V.asg=()=>{
+ const f=S.user.role==="faculty";
+ return `<h1>Assignments</h1><p class="sub">${f?"Create and track assignments":"Submit and track your work"}</p>
+ <div class="card scroll"><table><tr><th>Title</th><th>Subject</th><th>Due</th><th>Status</th>${f?"":"<th></th>"}</tr>
+ ${S.assignments.map(a=>`<tr><td>${esc(a.title)}</td><td>${a.subj}</td><td>${a.due}</td><td>${f?`<span class="tag">${a.subs} submitted</span>`:`<span class="tag ${a.done?"o":left(a.due)<=1?"e":"w"}">${a.done?"Submitted":"Pending"}</span>`}</td>${f?"":`<td>${a.done?"":`<button class="btn s" onclick="submitA(${a.id})">Submit</button>`}</td>`}</tr>`).join("")}</table></div>
+ ${f?`<div class="card"><h3>New assignment</h3><div class="row"><input id="at" placeholder="Title"><select id="as">${SUBJ.map(s=>`<option>${s}</option>`).join("")}</select><input id="ad" type="date"><input id="ae" type="number" value="2" min="1" style="width:70px" title="Estimated hours"><button class="btn" onclick="addA()">Create</button></div></div>`:""}`;
+};
+
+V.att=()=>{
+ if(S.user.role==="faculty")return `<h1>Mark Attendance</h1><p class="sub">Record one class for a student</p><div class="card"><div class="row"><select id="st">${stuOpts()}</select><select id="su">${subOpts()}</select><button class="btn s" onclick="mark(1)">Present</button><button class="btn s" onclick="mark(0)">Absent</button></div></div>`;
+ return `<h1>Attendance</h1><p class="sub">Subject-wise attendance</p><div class="card">${Object.entries(S.attendance).map(([s,[a,b]])=>`<div class="li"><div class="row">${s}<span class="tag ${pct(a,b)<75?"e":"o"}">${b?pct(a,b)+"%":"No classes yet"}</span></div>${bar(pct(a,b))}</div>`).join("")}</div>`;
+};
+V.grS=()=>`<h1>Exams & Grades</h1><p class="sub">Marks and upcoming exams</p>
+ <div class="card">${Object.entries(S.grades).map(([s,g])=>`<div class="li"><div class="row">${s}<b>${g}%</b></div>${bar(g)}</div>`).join("")}</div>
+ <div class="card"><h3>Upcoming exams</h3>${S.exams.map(e=>`<div class="li">${e.subj} — ${e.date} <span class="tag w">in ${left(e.date)} days</span></div>`).join("")}</div>`;
+
+V.msg=()=>`<h1>Communication</h1><p class="sub">Announcements and messages</p>
+ <div class="card">${S.messages.slice().reverse().map(m=>`<div class="li"><b>${esc(m.from)}</b> <span class="mu">${m.at}</span><div>${esc(m.text)}</div></div>`).join("")}
+ <div class="row"><input id="mx" placeholder="Write a message" style="flex:1"><button class="btn" onclick="sendM()">Send</button></div></div>`;
+
+V.not=()=>{
+ const n=[];
+ S.assignments.filter(a=>!a.done&&left(a.due)<=3).forEach(a=>n.push(["e",`Assignment “${a.title}” due in ${left(a.due)} day(s)`]));
+ S.exams.filter(e=>left(e.date)<=7&&left(e.date)>=0).forEach(e=>n.push(["w",`${e.subj} exam in ${left(e.date)} day(s)`]));
+ Object.entries(S.attendance).filter(([,[a,b]])=>pct(a,b)<75).forEach(([s])=>n.push(["e",`Low attendance in ${s}`]));
+ S.messages.forEach(m=>n.push(["o",`Announcement: ${m.text}`]));
+ return `<h1>Notifications</h1><p class="sub">Reminders and updates</p><div class="card">${n.map(x=>`<div class="li"><span class="tag ${x[0]}">●</span>${esc(x[1])}</div>`).join("")||"No new notifications."}</div>`;
+};
+
+/* --- Feature 2: Peer Learning and Doubt Exchange --- */
+let SF="All",QT="";
+V.peer=()=>{
+ const f=s=>SF==="All"||s===SF;
+ const mates=QT?S.classmates.filter(c=>c.topics.some(t=>t.toLowerCase().includes(QT.toLowerCase()))):[];
+ return `<h1>Peer Learning & Doubt Exchange</h1><p class="sub">Study groups, doubts, shared resources and classmates on the same topic.</p>
+ <div class="row">Subject: <select onchange="SF=this.value;render()">${["All",...SUBJ].map(s=>`<option ${s===SF?"selected":""}>${s}</option>`).join("")}</select></div>
+ <div class="card"><h3>Study groups</h3>${S.groups.filter(g=>f(g.subj)).map(g=>`<div class="li"><b>${esc(g.name)}</b> <span class="tag">${g.subj}</span><span class="tag">${esc(g.topic)}</span><div class="mu">${g.members.length+(g.joined?1:0)} members: ${g.members.join(", ")}${g.joined?", You":""}</div><button class="btn s" onclick="joinG(${g.id})">${g.joined?"Leave":"Join"}</button></div>`).join("")||"No groups yet."}
+ <div class="row"><input id="gn" placeholder="New group name"><select id="gs">${SUBJ.map(s=>`<option>${s}</option>`).join("")}</select><input id="gp" placeholder="Topic"><button class="btn" onclick="newG()">Create</button></div></div>
+ <div class="card"><h3>Doubts</h3>${S.doubts.filter(d=>f(d.subj)).map(d=>`<div class="li"><span class="tag">${d.subj}</span><b>${esc(d.q)}</b> <span class="mu">— ${esc(d.by)}</span>${d.replies.map(r=>`<div class="mu" style="margin:4px 0 0 14px">↳ <b>${esc(r.by)}:</b> ${esc(r.text)}</div>`).join("")}<div class="row"><input id="r${d.id}" placeholder="Explain or reply" style="flex:1"><button class="btn s" onclick="reply(${d.id})">Reply</button></div></div>`).join("")||"No doubts posted."}
+ <div class="row"><input id="dq" placeholder="Post a doubt" style="flex:1"><select id="ds">${SUBJ.map(s=>`<option>${s}</option>`).join("")}</select><button class="btn" onclick="postD()">Post</button></div></div>
+ <div class="grid"><div class="card"><h3>Shared resources</h3><p class="mu">Share only material you are permitted to share, such as your own notes.</p>${S.shared.filter(r=>f(r.s)).map(r=>`<div class="li">${esc(r.t)}<div class="mu">by ${esc(r.by)} · ${r.s}</div></div>`).join("")}
+ <div class="row"><input id="rt" placeholder="Resource title" style="flex:1"><button class="btn" onclick="share()">Share</button></div></div>
+ <div class="card"><h3>Find classmates by topic</h3><div class="row"><input id="mtp" value="${esc(S.mytopics)}" placeholder="Topics you study (comma separated)"><button class="btn s" onclick="setTopics()">Save mine</button></div><input value="${esc(QT)}" placeholder="e.g. graphs" onchange="QT=this.value;render()">${QT?(mates.map(c=>`<div class="li">${c.n} <span class="mu">${c.topics.join(", ")}</span></div>`).join("")||'<p class="mu">No match yet.</p>'):""}</div></div>`;
+};
+
+/* --- Feature 3: Academic-to-Career Roadmap --- */
+let CS=SUBJ[0];
+V.car=()=>{
+ const c=CAREER[CS],all=[...c.skills,...c.proj,...c.cert,...c.intern],d=S.career.done;
+ const n=all.filter(x=>d[CS+x]).length;
+ const sec=(t,a)=>`<div class="card"><h3>${t}</h3>${a.map(x=>`<label class="li" style="display:block"><input type="checkbox" ${d[CS+x]?"checked":""} onchange="tick('${esc(CS+x).replace(/'/g,"\\'")}')"> ${esc(x)}</label>`).join("")}</div>`;
+ return `<h1>Academic-to-Career Roadmap</h1><p class="sub">See how what you study connects to skills, projects, certifications and internships.</p>
+ <div class="row">Subject: <select onchange="CS=this.value;render()">${SUBJ.map(s=>`<option ${s===CS?"selected":""}>${s}</option>`).join("")}</select> <span class="tag">Career path: ${c.role}</span></div>
+ <div class="card">Roadmap progress: <b>${pct(n,all.length)}%</b>${bar(pct(n,all.length))}<span class="mu">Current grade in ${CS}: ${S.grades[CS]}%</span></div>
+ <div class="grid">${sec("Technical skills",c.skills)}${sec("Project suggestions",c.proj)}${sec("Certifications",c.cert)}${sec("Internship preparation",c.intern)}</div>`;
+};
+
+/* ---------- actions (all persisted via API) ---------- */
+const val=i=>$(i).value.trim();
+function addGoal(){const t=val("#gt");if(t)act("POST","/api/goals",{text:t})}
+function delGoal(id){act("DELETE","/api/goals/"+id)}
+function addExam(){const d=$("#ed").value;if(d)act("POST","/api/exams",{subj:$("#es").value,date:d})}
+function addMat(){const t=val("#mt");if(t)act("POST","/api/materials",{title:t,subject:$("#ms").value,kind:$("#mk").value})}
+function submitA(id){act("POST","/api/assignments/"+id+"/submit")}
+function addA(){const t=val("#at"),d=$("#ad").value;if(t&&d)act("POST","/api/assignments",{title:t,subj:$("#as").value,due:d,est:+$("#ae").value||2})}
+function sendM(){const t=val("#mx");if(t)act("POST","/api/messages",{text:t})}
+function joinG(id){act("POST","/api/groups/"+id+"/toggle")}
+function newG(){const n=val("#gn");if(n)act("POST","/api/groups",{name:n,subject:$("#gs").value,topic:val("#gp")||"General"})}
+function postD(){const q=val("#dq");if(q)act("POST","/api/doubts",{subject:$("#ds").value,question:q})}
+function reply(id){const t=val("#r"+id);if(t)act("POST","/api/doubts/"+id+"/replies",{text:t})}
+function share(){const t=val("#rt");if(t)act("POST","/api/shared",{title:t,subject:SF==="All"?SUBJ[0]:SF})}
+function tick(k){act("POST","/api/career",{key:k})}
+function setTopics(){act("PUT","/api/profile",{topics:val("#mtp")})}
+const mark=p=>act("POST","/api/attendance",{student_id:+$("#st").value,subject:$("#su").value,present:!!p});
+function setGrade(){act("POST","/api/grades",{student_id:+$("#gst").value,subject:$("#gsu").value,score:+$("#gsc").value})}
+const stuOpts=()=>S.students.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join("");
+const subOpts=()=>SUBJ.map(s=>`<option>${s}</option>`).join("");
+V.gr=()=>S.user.role==="faculty"?facGr():V.grS();
+function facGr(){return `<h1>Record Grades</h1><p class="sub">Marks appear on the student’s dashboard and drive recommendations</p><div class="card"><div class="row"><select id="gst">${stuOpts()}</select><select id="gsu">${subOpts()}</select><input id="gsc" type="number" min="0" max="100" placeholder="Score %" style="width:100px"><button class="btn" onclick="setGrade()">Save</button></div></div>`}
+
+/* ---------- shell ---------- */
+function render(){
+ const r=$("#root");
+ if(!S){r.innerHTML=authHTML();return}
+ const nav=NAV[S.user.role];
+ if(!nav.some(n=>n[0]===S.view))S.view="dash";
+ r.innerHTML=`<div class="app"><nav><h2>Unified Education Interface</h2>${nav.map(n=>`<button class="${S.view===n[0]?"on":""} ${n[2]?"new":""}" onclick="go('${n[0]}')">${n[1]}</button>`).join("")}<button onclick="logout()">Sign out</button></nav><main>${V[S.view]()}</main></div>`;
+}
+(async()=>{try{await load()}catch(e){S=null}render()})();
+</script>
+</body>
+</html>
